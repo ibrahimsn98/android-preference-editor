@@ -6,30 +6,39 @@ import xml.etree.ElementTree as xmlTree
 
 from main.utils import intInput
 
-print('Initializing..')
+print('Initializing ADB as a root...')
 
+# Start adb as root
 subprocess.call("adb root", shell=True)
 time.sleep(3)
 
-print('Getting packages..')
-
+# Get all of the installed app packages
 packages = subprocess.check_output("adb shell 'pm list packages -f' | sed -e 's/.*=//' | sort",
                                    shell=True).decode('UTF-8').split('\n')
+# Remove empty package
+packages.pop()
 
-for package in packages:
-    if len(package) == 0:
+# Iterate packages
+for i, package in enumerate(packages):
+
+    # Show progressbar
+    sys.stdout.write('\r')
+    sys.stdout.write("Getting app packages [%-30s] %d%%" % ('=' * int((i+1) / len(packages) * 30), int((i+1) / len(packages) * 100)))
+    sys.stdout.flush()
+
+    # Remove packages that doesn't have any preference files
+    check_pref_file_str = "adb shell 'ls /data/data/" + package + "/shared_prefs'"
+    check_pref_file = subprocess.check_output(check_pref_file_str, shell=True).decode('UTF-8')
+    if 'No such file or directory' in check_pref_file:
         packages.remove(package)
-    else:
-        check_pref_file_str = "adb shell 'ls /data/data/" + package + "/shared_prefs'"
-        check_pref_file = subprocess.check_output(check_pref_file_str, shell=True).decode('UTF-8')
-        if 'No such file or directory' in check_pref_file:
-            packages.remove(package)
+
+# New line
+print("")
 
 for i, package in enumerate(packages):
-    pass
     print(str(i) + ') ' + package)
 
-package_index = intInput('Please select app package:')
+package_index = intInput('Select app package: ')
 
 if package_index < 0 or package_index > len(packages) - 1:
     sys.exit(0)
@@ -37,19 +46,19 @@ if package_index < 0 or package_index > len(packages) - 1:
 package = packages[package_index]
 print(package)
 
+# Get preference files of selected package
 pref_files_str = "adb shell 'ls /data/data/" + package + "/shared_prefs'"
 pref_files = subprocess.check_output(pref_files_str, shell=True).decode('UTF-8').split('\n')
 
-for pref_file in pref_files:
-    if len(pref_file) == 0:
-        pref_files.remove(pref_file)
+# Remove empty file name
+pref_files.pop()
 
 while True:
     for i, pref_file in enumerate(pref_files):
         print(str(i) + ') ' + pref_file)
 
     print('-1) Exit')
-    pref_file_index = intInput('Please select pref file:')
+    pref_file_index = intInput('Select preference file: ')
 
     if pref_file_index == -1:
         break
@@ -60,9 +69,11 @@ while True:
 
     pref_file = pref_files[pref_file_index]
 
+    # Get preference file content
     pref_file_data_str = "adb shell 'cat /data/data/" + package + "/shared_prefs/" + pref_file + "'"
     pref_file_data = subprocess.check_output(pref_file_data_str, shell=True).decode('UTF-8')
 
+    # Decode XML content
     root = xmlTree.fromstring(pref_file_data)
 
     while True:
@@ -73,7 +84,7 @@ while True:
                 print(str(i) + ') ', child.tag, child.attrib['name'], child.attrib['value'])
 
         print('-1) Back to previous page')
-        pref_index = intInput('Select preference to edit:')
+        pref_index = intInput('Select preference to edit: ')
 
         if pref_index == -1:
             break
@@ -84,9 +95,10 @@ while True:
 
         pref = root[pref_index]
 
-        pref_new_value = input('Enter new value')
+        pref_new_value = input('Enter new value: ')
         root[pref_index].attrib['value'] = pref_new_value
 
+        # Update preference file content with decoded xmlTree
         pref_update_str_content = '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>\n' + xmlTree.tostring(root) \
             .decode('UTF-8')
 
