@@ -4,7 +4,16 @@ import sys
 import time
 import xml.etree.ElementTree as xmlTree
 
-from main.utils import intInput
+
+def intInput(desc):
+    while True:
+        try:
+            data = int(input(desc))
+            break
+        except Exception as e:
+            print(e)
+    return data
+
 
 print('Initializing ADB as a root...')
 
@@ -38,7 +47,7 @@ print("")
 for i, package in enumerate(packages):
     print(str(i) + ') ' + package)
 
-package_index = intInput('Select app package: ')
+package_index = intInput('\nSelect app package: ')
 
 if package_index < 0 or package_index > len(packages) - 1:
     sys.exit(0)
@@ -58,7 +67,7 @@ while True:
         print(str(i) + ') ' + pref_file)
 
     print('-1) Exit')
-    pref_file_index = intInput('Select preference file: ')
+    pref_file_index = intInput('\nSelect preference file: ')
 
     if pref_file_index == -1:
         break
@@ -84,7 +93,7 @@ while True:
                 print(str(i) + ') ', child.tag, child.attrib['name'], child.attrib['value'])
 
         print('-1) Back to previous page')
-        pref_index = intInput('Select preference to edit: ')
+        pref_index = intInput('\nSelect preference to edit: ')
 
         if pref_index == -1:
             break
@@ -95,8 +104,12 @@ while True:
 
         pref = root[pref_index]
 
-        pref_new_value = input('Enter new value: ')
-        root[pref_index].attrib['value'] = pref_new_value
+        pref_new_value = input('\nEnter new value: ')
+
+        if pref.tag == 'string':
+            root[pref_index].text = pref_new_value
+        else:
+            root[pref_index].attrib['value'] = pref_new_value
 
         # Update preference file content with decoded xmlTree
         pref_update_str_content = '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>\n' + xmlTree.tostring(root) \
