@@ -1,5 +1,7 @@
 ## Android Shared Preferences Editor
-Change the preferences of the applications.
+Change the preferences of the Android applications.
+
+<img width="450" src="https://github.com/ibrahimsn98/android-preference-editor/blob/master/art/screenshot.png"/>
 
 ### Usage
 1) Start the emulator or connect your device via USB.<br>
